@@ -25,7 +25,7 @@ def create_s3_bucket():
 # 𝗠𝗨𝗦𝗧 𝗯𝗲 𝗯𝗲𝗳𝗼𝗿𝗲 𝗿𝗼𝘂𝘁𝗲𝘀
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3004"],  # Exact frontend origin
+    allow_origins=["http://35.177.24.156:3004"],  # Exact frontend origin
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
