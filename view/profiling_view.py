@@ -16,6 +16,7 @@ from io import StringIO
 from uvicorn import Config
 
 from main import LOCALSTACK_ENDPOINT, S3_BUCKET
+from config import settings
 from view.data_quality import DataQualityChecker
 
 
@@ -54,15 +55,15 @@ async def profile_csv(request: FixDataRequest):
         # Initialize S3 client
         s3 = boto3.client(
             's3',
-            aws_access_key_id='test',
-            aws_secret_access_key='test',
-            endpoint_url=LOCALSTACK_ENDPOINT
+            aws_access_key_id=settings.AWS_ACCESS_KEY,
+            aws_secret_access_key=settings.AWS_SECRET_KEY,
+            region_name=settings.AWS_REGION
         )
 
         # Fetch cleaned CSV from S3
         try:
             response = s3.get_object(
-                Bucket=S3_BUCKET,
+                Bucket=settings.S3_BUCKET_NAME,
                 Key=f"cleaned/{file_id}.csv"
             )
         except s3.exceptions.NoSuchKey:
@@ -131,7 +132,7 @@ async def profile_csv(request: FixDataRequest):
 
             # Save profile as JSON
             s3.put_object(
-                Bucket=S3_BUCKET,
+                Bucket=settings.S3_BUCKET_NAME,
                 Key=profile_key,
                 Body=json.dumps(profile, default=str)
             )
@@ -139,7 +140,7 @@ async def profile_csv(request: FixDataRequest):
             # Save CSV copy (optional)
             csv_data = df.to_csv(index=False)
             s3.put_object(
-                Bucket=S3_BUCKET,
+                Bucket=settings.S3_BUCKET_NAME,
                 Key=csv_key,
                 Body=csv_data
             )
@@ -170,14 +171,14 @@ async def upload_file(file: UploadFile = File(...)):
 
         s3 = boto3.client(
             's3',
-            aws_access_key_id='test',
-            aws_secret_access_key='test',
-            endpoint_url=LOCALSTACK_ENDPOINT
+            aws_access_key_id=settings.AWS_ACCESS_KEY,
+            aws_secret_access_key=settings.AWS_SECRET_KEY,
+            region_name=settings.AWS_REGION
         )
 
         # Upload to S3
         s3.put_object(
-            Bucket=S3_BUCKET,
+            Bucket=settings.S3_BUCKET_NAME,
             Key=f"original/{file_id}.csv",
             Body=contents
         )
@@ -198,15 +199,15 @@ async def fix_data(request: FixDataRequest):
     try:
         s3 = boto3.client(
             's3',
-            aws_access_key_id='test',
-            aws_secret_access_key='test',
-            endpoint_url=LOCALSTACK_ENDPOINT
+            aws_access_key_id=settings.AWS_ACCESS_KEY,
+            aws_secret_access_key=settings.AWS_SECRET_KEY,
+            region_name=settings.AWS_REGION
         )
 
         # Fetch original file from S3
         try:
             response = s3.get_object(
-                Bucket=S3_BUCKET,
+                Bucket=settings.S3_BUCKET_NAME,
                 Key=f"original/{file_id}.csv"
             )
         except s3.exceptions.NoSuchKey:
@@ -223,7 +224,7 @@ async def fix_data(request: FixDataRequest):
         # Save to S3 (optional)
         cleaned_csv = fixed_df.to_csv(index=False)
         s3.put_object(
-            Bucket=S3_BUCKET,
+            Bucket=settings.S3_BUCKET_NAME,
             Key=f"cleaned/{file_id}.csv",
             Body=cleaned_csv
         )
@@ -252,7 +253,7 @@ async def generate_metadata(request: MetadataRequest):
         # Get cleaned data from S3
         s3 = boto3.client('s3', config=Config(signature_version=UNSIGNED))
         response = s3.get_object(
-            Bucket=S3_BUCKET,
+            Bucket=settings.S3_BUCKET_NAME,
             Key=f"cleaned/{request.file_id}.csv"
         )
         csv_content = response['Body'].read().decode('utf-8')
